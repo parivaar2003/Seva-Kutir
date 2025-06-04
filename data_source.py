@@ -84,10 +84,13 @@ class data:
         df = df.copy()
         if frequency == "Daily":
             df['Period'] = df['Date'].dt.strftime('%Y-%m-%d')
+        elif frequency == "Weekly":
+            df['Period'] = df['Date'].dt.strftime('%Y-%U')
         elif frequency == "Monthly":
             df['Period'] = df['Date'].dt.strftime('%Y-%m')
         elif frequency == "Yearly":
             df['Period'] = df['Date'].dt.strftime('%Y')
+
         agg_df = df.groupby('Period', as_index=False)['Attendance of Students'].sum()
         return agg_df
 
