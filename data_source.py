@@ -92,7 +92,7 @@ class data:
             df['Period'] = df['Date'].dt.strftime('%Y')
 
         agg_df = df.groupby('Period', as_index=False)['Attendance of Students'].sum()
-        return agg_df
+        return agg_df, df
 
     def calculate_kpis(self, df):
         total_sessions = df.shape[0]

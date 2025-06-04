@@ -17,7 +17,7 @@ df = data_object.sheet
 
 # Filter Section (inline below title)
 st.markdown("### Filters")
-col1, col2, col3, col4, col5, col6 = st.columns(6)
+col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
 
 with col1:
     selected_state = st.selectbox('Select State', sorted(df['State'].dropna().unique()))
@@ -31,6 +31,8 @@ with col5:
     end_date = st.date_input('Select End Date', value=df['Date'].max().date())
 with col6:
     frequency = st.selectbox("Select Frequency", ["Daily", "Weekly", "Monthly", "Yearly"], index=1)
+with col7:
+    selected_shift = st.selectbox('Select Shift', sorted(df['Shift'].dropna().unique()))
 
 # Kutir type on a separate row
 selected_kutirs = st.multiselect('Select Kutir type', sorted(df[df['Cluster'] == selected_cluster]['Type of Kutir'].dropna().unique()))
@@ -39,6 +41,7 @@ selected_kutirs = st.multiselect('Select Kutir type', sorted(df[df['Cluster'] ==
 df = df[(df['State'] == selected_state) &
         (df['District'] == selected_district) &
         (df['Cluster'] == selected_cluster) &
+        (df['Shift'] == selected_shift) &
         (df['Date'].dt.date >= start_date) &
         (df['Date'].dt.date <= end_date)]
 if selected_kutirs:
@@ -60,7 +63,7 @@ st.markdown("""
 st.markdown("### Key Performance Indicators")
 kpi1, kpi2, kpi3 = st.columns(3)
 
-agg_df = data_object.aggregate_attendance(df, frequency)
+agg_df, agg_df_2 = data_object.aggregate_attendance(df, frequency)
 periods = agg_df['Period'].nunique()
 max_students = agg_df['Attendance of Students'].max()
 avg_attendance = agg_df['Attendance of Students'].mean()
@@ -93,32 +96,27 @@ with kpi3:
 
 # Graph 1: Attendance Trend Chart
 st.markdown(f"### Student Attendance Over Time ({frequency} Basis)")
-fig1 = px.line(agg_df, x='Period', y='Attendance of Students', title=f"Student Attendance vs Period ({frequency})")
-fig1.update_layout(margin=dict(l=20, r=20, t=40, b=20))
+agg_df['Color'] = agg_df['Attendance of Students'].apply(lambda x: 'red' if x < avg_attendance else 'blue')
+fig1 = go.Figure()
+fig1.add_trace(go.Scatter(
+    x=agg_df['Period'],
+    y=agg_df['Attendance of Students'],
+    mode='lines+markers',
+    line=dict(color='gray'),
+    marker=dict(color=agg_df['Color']),
+    name='Attendance'
+))
+fig1.update_layout(title=f"Student Attendance vs Period ({frequency})",
+                   margin=dict(l=20, r=20, t=40, b=20))
 fig1.update_xaxes(type='category', tickangle=45)
-if frequency == "Weekly":
-    fig1.update_xaxes(tickformat="%Y-W%U")
 st.plotly_chart(fig1, use_container_width=True)
 
 # Graph 2: Kutir Type vs Period
 st.markdown(f"### Kutir Type Attendance Trend ({frequency} Basis)")
-kt_df = df.copy()
-if frequency == "Daily":
-    kt_df['Period'] = kt_df['Date'].dt.strftime('%Y-%m-%d')
-elif frequency == "Weekly":
-    kt_df['Period'] = kt_df['Date'].dt.strftime('%Y-W%U')
-elif frequency == "Monthly":
-    kt_df['Period'] = kt_df['Date'].dt.strftime('%Y-%m')
-elif frequency == "Yearly":
-    kt_df['Period'] = kt_df['Date'].dt.strftime('%Y')
-
-kt_agg_df = kt_df.groupby(['Period', 'Type of Kutir'], as_index=False)['Attendance of Students'].sum()
-fig2 = px.bar(kt_agg_df, x='Period', y='Attendance of Students', color='Type of Kutir', barmode='group',
+fig2 = px.bar(agg_df_2, x='Period', y='Attendance of Students', color='Type of Kutir', barmode='group',
               title=f"Kutir Type vs Period ({frequency})")
 fig2.update_layout(margin=dict(l=20, r=20, t=40, b=20))
 fig2.update_xaxes(type='category', tickangle=45)
-if frequency == "Weekly":
-    fig2.update_xaxes(tickformat="%Y-W%U")
 st.plotly_chart(fig2, use_container_width=True)
 
 # Detailed Table
