@@ -22,7 +22,7 @@ def singleton(cls):
 class data:
     def __init__(self):
         self.sheet = pd.read_excel('Parivaar_Kutirs_Mock_Data.xlsx', sheet_name='Mock_Data')
-        print("Original Columns:", self.sheet.columns.tolist())  # Debug line
+        # print("Original Columns:", self.sheet.columns.tolist())  # Debug line
         self.rename_columns()
         self.make_columns_unique()
         self.convert_column_types()

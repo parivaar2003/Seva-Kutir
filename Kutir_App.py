@@ -106,6 +106,20 @@ fig1.add_trace(go.Scatter(
     marker=dict(color=agg_df['Color']),
     name='Attendance'
 ))
+fig1.add_trace(go.Scatter(
+    x=agg_df[agg_df['Color'] == 'red']['Period'],
+    y=agg_df[agg_df['Color'] == 'red']['Attendance of Students'],
+    mode='markers',
+    marker=dict(color='red', size=10),
+    name=f'Below {frequency} Average'
+))
+fig1.add_trace(go.Scatter(
+    x=agg_df[agg_df['Color'] == 'blue']['Period'],
+    y=agg_df[agg_df['Color'] == 'blue']['Attendance of Students'],
+    mode='markers',
+    marker=dict(color='blue', size=10),
+    name=f'Above {frequency} Average'
+))
 fig1.update_layout(title=f"Student Attendance vs Period ({frequency})",
                    margin=dict(l=20, r=20, t=40, b=20))
 fig1.update_xaxes(type='category', tickangle=45)
