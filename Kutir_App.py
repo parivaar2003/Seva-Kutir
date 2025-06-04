@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from data_source import data
 import pandas as pd
+from io import BytesIO
 
 st.set_page_config(page_title="Seva Kutir Dashboard", layout="wide")
 st.markdown("""
@@ -16,7 +17,7 @@ df = data_object.sheet
 
 # Filter Section (inline below title)
 st.markdown("### Filters")
-col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
     selected_state = st.selectbox('Select State', sorted(df['State'].dropna().unique()))
@@ -25,20 +26,23 @@ with col2:
 with col3:
     selected_cluster = st.selectbox('Select Cluster', sorted(df[df['District'] == selected_district]['Cluster'].dropna().unique()))
 with col4:
-    selected_kutir = st.selectbox('Select Kutir type', sorted(df[df['Cluster'] == selected_cluster]['Type of Kutir'].dropna().unique()))
-with col5:
     start_date = st.date_input('Select Start Date', value=df['Date'].min().date())
-with col6:
+with col5:
     end_date = st.date_input('Select End Date', value=df['Date'].max().date())
-with col7:
-    frequency = st.selectbox("Select Frequency", ["Daily", "Weekly", "Monthly", "Yearly"])
+with col6:
+    frequency = st.selectbox("Select Frequency", ["Daily", "Weekly", "Monthly", "Yearly"], index=1)
 
-filtered_df = df[(df['State'] == selected_state) &
-                 (df['District'] == selected_district) &
-                 (df['Cluster'] == selected_cluster) &
-                 (df['Type of Kutir'] == selected_kutir) &
-                 (df['Date'].dt.date >= start_date) &
-                 (df['Date'].dt.date <= end_date)]
+# Kutir type on a separate row
+selected_kutirs = st.multiselect('Select Kutir type', sorted(df[df['Cluster'] == selected_cluster]['Type of Kutir'].dropna().unique()))
+
+# Filtering
+df = df[(df['State'] == selected_state) &
+        (df['District'] == selected_district) &
+        (df['Cluster'] == selected_cluster) &
+        (df['Date'].dt.date >= start_date) &
+        (df['Date'].dt.date <= end_date)]
+if selected_kutirs:
+    df = df[df['Type of Kutir'].isin(selected_kutirs)]
 
 # KPI Section
 st.markdown("""
@@ -56,7 +60,7 @@ st.markdown("""
 st.markdown("### Key Performance Indicators")
 kpi1, kpi2, kpi3 = st.columns(3)
 
-agg_df = data_object.aggregate_attendance(filtered_df, frequency)
+agg_df = data_object.aggregate_attendance(df, frequency)
 periods = agg_df['Period'].nunique()
 max_students = agg_df['Attendance of Students'].max()
 avg_attendance = agg_df['Attendance of Students'].mean()
@@ -91,25 +95,18 @@ with kpi3:
 st.markdown(f"### Student Attendance Over Time ({frequency} Basis)")
 fig1 = px.line(agg_df, x='Period', y='Attendance of Students', title=f"Student Attendance vs Period ({frequency})")
 fig1.update_layout(margin=dict(l=20, r=20, t=40, b=20))
-
-if frequency == "Daily":
-    fig1.update_xaxes(dtick="D1", tickformat="%Y-%m-%d")
-elif frequency == "Weekly":
-    fig1.update_xaxes(dtick="M1", tickformat="%Y-%W")
-elif frequency == "Monthly":
-    fig1.update_xaxes(dtick="M1", tickformat="%Y-%m")
-elif frequency == "Yearly":
-    fig1.update_xaxes(dtick="M12", tickformat="%Y")
-
+fig1.update_xaxes(type='category', tickangle=45)
+if frequency == "Weekly":
+    fig1.update_xaxes(tickformat="%Y-W%U")
 st.plotly_chart(fig1, use_container_width=True)
 
 # Graph 2: Kutir Type vs Period
 st.markdown(f"### Kutir Type Attendance Trend ({frequency} Basis)")
-kt_df = filtered_df.copy()
+kt_df = df.copy()
 if frequency == "Daily":
     kt_df['Period'] = kt_df['Date'].dt.strftime('%Y-%m-%d')
 elif frequency == "Weekly":
-    kt_df['Period'] = kt_df['Date'].dt.strftime('%Y-%U')
+    kt_df['Period'] = kt_df['Date'].dt.strftime('%Y-W%U')
 elif frequency == "Monthly":
     kt_df['Period'] = kt_df['Date'].dt.strftime('%Y-%m')
 elif frequency == "Yearly":
@@ -118,19 +115,23 @@ elif frequency == "Yearly":
 kt_agg_df = kt_df.groupby(['Period', 'Type of Kutir'], as_index=False)['Attendance of Students'].sum()
 fig2 = px.bar(kt_agg_df, x='Period', y='Attendance of Students', color='Type of Kutir', barmode='group',
               title=f"Kutir Type vs Period ({frequency})")
-
-if frequency == "Daily":
-    fig2.update_xaxes(dtick="D1", tickformat="%Y-%m-%d")
-elif frequency == "Weekly":
-    fig2.update_xaxes(dtick="M1", tickformat="%Y-%W")
-elif frequency == "Monthly":
-    fig2.update_xaxes(dtick="M1", tickformat="%Y-%m")
-elif frequency == "Yearly":
-    fig2.update_xaxes(dtick="M12", tickformat="%Y")
-
 fig2.update_layout(margin=dict(l=20, r=20, t=40, b=20))
+fig2.update_xaxes(type='category', tickangle=45)
+if frequency == "Weekly":
+    fig2.update_xaxes(tickformat="%Y-W%U")
 st.plotly_chart(fig2, use_container_width=True)
 
 # Detailed Table
 st.markdown("### Detailed Session Data")
-st.dataframe(filtered_df[['Date', 'Shift', 'Teachers Name', 'Attendance of Students', 'Type of Kutir', 'Kutir Name']])
+columns_to_display = st.multiselect("Select Columns to Display", options=df.columns.tolist(), default=['Date', 'Shift', 'Teachers Name', 'Attendance of Students', 'Type of Kutir', 'Kutir Name'])
+st.dataframe(df[columns_to_display])
+
+excel_buffer = BytesIO()
+df[columns_to_display].to_excel(excel_buffer, index=False, engine='xlsxwriter')
+excel_buffer.seek(0)
+st.download_button(
+    label="Download Data as Excel",
+    data=excel_buffer,
+    file_name="filtered_kutir_data.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)

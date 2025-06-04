@@ -85,7 +85,7 @@ class data:
         if frequency == "Daily":
             df['Period'] = df['Date'].dt.strftime('%Y-%m-%d')
         elif frequency == "Weekly":
-            df['Period'] = df['Date'].dt.strftime('%Y-%U')
+            df['Period'] = df['Date'].dt.strftime('%Y-W%U')
         elif frequency == "Monthly":
             df['Period'] = df['Date'].dt.strftime('%Y-%m')
         elif frequency == "Yearly":
