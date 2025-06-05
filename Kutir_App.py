@@ -96,6 +96,33 @@ with kpi3:
 
 # Graph 1: Attendance Trend Chart
 st.markdown(f"### Student Attendance Over Time ({frequency} Basis)")
+
+# Create period-attendance dataframe with date ranges for weekly
+attendance_export_df = agg_df[['Period', 'Attendance of Students']].copy()
+if frequency == "Weekly":
+    week_date_range = df.copy()
+    week_date_range['Week'] = week_date_range['Date'].dt.strftime('%U').astype(int)
+    week_date_range['Year'] = week_date_range['Date'].dt.year
+    week_date_range['Period'] = week_date_range['Year'].astype(str) + '-W' + week_date_range['Week'].astype(str).str.zfill(2)
+    range_map = (
+        week_date_range.groupby('Period')['Date']
+        .agg(['min', 'max'])
+        .rename(columns={'min': 'Week Start Date', 'max': 'Week End Date'})
+        .reset_index()
+    )
+    attendance_export_df = attendance_export_df.merge(range_map, on='Period', how='left')
+
+# Download button for period-attendance dataframe
+excel_attendance_buffer = BytesIO()
+attendance_export_df.to_excel(excel_attendance_buffer, index=False, engine='xlsxwriter')
+excel_attendance_buffer.seek(0)
+st.download_button(
+    label="Download Attendance Trend Data",
+    data=excel_attendance_buffer,
+    file_name="attendance_trend_data.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
 agg_df['Color'] = agg_df['Attendance of Students'].apply(lambda x: 'red' if x < avg_attendance else 'blue')
 fig1 = go.Figure()
 fig1.add_trace(go.Scatter(
