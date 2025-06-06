@@ -11,6 +11,13 @@ st.markdown("""
     <h1 style='text-align: center; color: #4A4A4A;'>Seva Kutir Monitoring Dashboard</h1>
 """, unsafe_allow_html=True)
 
+# Top-right reload button
+reload_col = st.columns([0.85, 0.15])[1]
+with reload_col:
+    if st.button("🔄 Reload Data"):
+        data.destroy_instance()
+        st.experimental_rerun()
+
 # Load data
 data_object = data()
 df = data_object.sheet
