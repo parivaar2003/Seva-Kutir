@@ -29,5 +29,8 @@
   },
   "forwardPorts": [
     8501
-  ]
+  ],
+  "containerEnv": {
+    "GROQ_API_KEY": "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"
+  }
 }

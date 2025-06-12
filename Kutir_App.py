@@ -287,3 +287,35 @@ st.download_button(
 )
 
 st.dataframe(filtered_df[columns_to_display])
+##--------------------------------------------------------------------------------------
+st.markdown("### 🧠 Transform Data On Your Own")
+instruction = st.text_area("Enter your task (e.g., 'Filter rows where attendance > 50 and shift is AM')")
+
+if st.button("Run"):
+    df_sample = df.head(2)
+    schema = df_sample.dtypes.to_dict()
+    schema_str = '\n'.join(f"{k}: {v}" for k, v in schema.items())
+    
+    with st.spinner("Querying LLM Agent..."):
+        code = data_object.query_llm_agent(instruction, schema_str)
+        
+    # st.code(code, language='python')
+    # print(code.replace('`', '').replace('python', ''))
+
+    # Safe execution (use `exec` cautiously)
+    try:
+        local_env = {'df': df.copy()}
+        exec(code.replace('`', '').replace('python', ''), {}, local_env)
+        result_df = local_env.get('result_df') or local_env.get('df')
+        st.dataframe(result_df)
+        excel_buffer = BytesIO()
+        result_df.to_excel(excel_buffer, index=False, engine='xlsxwriter')
+        excel_buffer.seek(0)
+        st.download_button(
+            label="Download Data as Excel",
+            data=excel_buffer,
+            file_name="LLM_Transformed_Data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    except Exception as e:
+        st.error(f"Error executing generated code: {e}")

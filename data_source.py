@@ -3,6 +3,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 from statistics import mean
 from oauth2client.service_account import ServiceAccountCredentials
+from groq import Groq
+import os
 
 # Singleton decorator for caching
 def singleton(cls):
@@ -21,6 +23,7 @@ def singleton(cls):
 class data:
     def __init__(self):
         self.sheet = pd.read_excel('Parivaar_Kutirs_Mock_Data.xlsx', sheet_name='Mock_Data')
+        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
         self.rename_columns()
         self.make_columns_unique()
         self.convert_column_types()
@@ -140,3 +143,18 @@ class data:
             return '76-100'
         else:
             return '100+'
+    def query_llm_agent(self, prompt, df_schema):
+        system_message = f"""You are a Python data expert. You are given a DataFrame with this schema:
+        {df_schema}
+        Based on user instruction, return Python code to manipulate or analyze it.
+        Ensure your output is only Python code without any comments"""
+        response = self.client.chat.completions.create(
+                messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt}
+                ],
+                model="llama-3.3-70b-versatile",
+                temperature=0.3,
+                max_tokens=800
+            )
+        return response.choices[0].message.content
