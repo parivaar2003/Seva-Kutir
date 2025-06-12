@@ -94,24 +94,6 @@ class data:
         self.sheet = df
         self.week_ranges = week_ranges
 
-    def filter_data(self, state=None, district=None, cluster=None, shift=None, kutir=None, start_date=None, end_date=None):
-        df = self.sheet
-
-        if state:
-            df = df[df['State'] == state]
-        if district:
-            df = df[df['District'] == district]
-        if cluster:
-            df = df[df['Cluster'] == cluster]
-        if shift:
-            df = df[df['Shift'] == shift]
-        if start_date and end_date:
-            df = df[(df['Date'].dt.date >= start_date) & (df['Date'].dt.date <= end_date)]
-        if kutir:
-            df = df[df['Type of Kutir'].isin(kutir)]
-
-        return df
-
     def aggregate_attendance(self, df, frequency):
         if frequency == "Daily":
             df['Period'] = df['Daily Period']
@@ -149,3 +131,12 @@ class data:
         avg_weekly_attendance = agg_df['Attendance of Students'].mean()
 
         return num_weeks, max_attendance, avg_weekly_attendance
+    def categorize(self, attendance):
+        if attendance < 50:
+            return '<50'
+        elif 50 <= attendance <= 75:
+            return '50-75'
+        elif 76 <= attendance <= 100:
+            return '76-100'
+        else:
+            return '100+'
