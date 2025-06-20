@@ -21,45 +21,66 @@ with reload_col:
 # Load data
 data_object = data()
 df = data_object.sheet
+filtered_df = df.copy()
 
 # Filters
 st.markdown("### Filters")
-col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
-
-with col1:
-    selected_state = st.selectbox('Select State', sorted(df['State'].dropna().unique()))
-with col2:
-    selected_district = st.selectbox('Select District', sorted(df[df['State'] == selected_state]['District'].dropna().unique()))
-with col3:
-    selected_cluster = st.selectbox('Select Cluster', sorted(df[df['District'] == selected_district]['Cluster'].dropna().unique()))
-with col4:
-    start_date = st.date_input('Select Start Date', value=df['Date'].min().date())
-with col5:
-    # Set min_value for end_date to start_date so user can't select a date before start_date
-    end_date = st.date_input('Select End Date', value=df['Date'].max().date(), min_value=start_date)
-
-    # If user somehow selects end_date < start_date, reset it to start_date
+# Row 1: State and Date Range
+row1_col1, row1_col2, row1_col3, row1_col4, row1_col5 = st.columns(5)
+with row1_col1:
+    selected_state = st.selectbox('Select State', sorted(df['State'].dropna().unique()), index=1)
+    filtered_df = filtered_df[filtered_df['State'] == selected_state]
+with row1_col2:
+    start_date = st.date_input('Start Date', value=filtered_df['Date'].min().date())
+    filtered_df = filtered_df[filtered_df['Date'].dt.date >= start_date]
+with row1_col3:
+    end_date = st.date_input('End Date', value=filtered_df['Date'].max().date(), min_value=start_date)
     if end_date < start_date:
         st.warning("End Date cannot be before Start Date. Resetting End Date to Start Date.")
         end_date = start_date
-with col6:
-    frequency = st.selectbox("Select Frequency", ["Daily", "Weekly", "Monthly", "Yearly"], index=1)
-with col7:
+    filtered_df = filtered_df[filtered_df['Date'].dt.date <= end_date]
+with row1_col4:
     selected_shift = st.selectbox('Select Shift', sorted(df['Shift'].dropna().unique()))
+    filtered_df = filtered_df[filtered_df['Shift'] == selected_shift]
+with row1_col5:
+    frequency = st.selectbox("Select Frequency", ["Daily", "Weekly", "Monthly", "Yearly"], index=1)
 
-# Kutir type multiselect
-selected_kutirs = st.multiselect('Select Kutir type', sorted(df[df['Cluster'] == selected_cluster]['Type of Kutir'].dropna().unique()))
+# Row 2: District, Cluster, Kutir Name, Kutir Type
+row2_col1, row2_col2, row2_col3, row2_col4 = st.columns(4)
 
-# Filter data
-filtered_df = data_object.filter_data(
-    state=selected_state,
-    district=selected_district,
-    cluster=selected_cluster,
-    shift=selected_shift,
-    start_date=start_date,
-    end_date=end_date,
-    kutir=selected_kutirs
-)
+# Multiselect for District
+with row2_col1:
+    district_options = sorted(filtered_df['District'].dropna().unique())
+    district_options.insert(0, "All")
+    selected_districts = st.multiselect("Select District(s)", district_options, default=["All"])
+    if 'All' not in selected_districts:
+        filtered_df = filtered_df[filtered_df['District'].isin(selected_districts)]
+
+
+# Multiselect for Cluster (filtered by selected districts)
+with row2_col2:
+    cluster_options = filtered_df['Cluster'].dropna().unique()
+    cluster_options = sorted(cluster_options)
+    cluster_options.insert(0, "All")
+    selected_clusters = st.multiselect("Select Cluster(s)", cluster_options, default=["All"])
+    if 'All' not in selected_clusters:
+        filtered_df = filtered_df[filtered_df['Cluster'].isin(selected_clusters)]
+
+# Multiselect for Kutir Name
+with row2_col3:
+    kutir_name_options = filtered_df['Kutir Name'].dropna().unique()
+    kutir_name_options = sorted(kutir_name_options)
+    kutir_name_options.insert(0, "All")
+    selected_kutir_names = st.multiselect("Select Kutir Name(s)", kutir_name_options, default=["All"])
+    if 'All' not in selected_kutir_names:
+        filtered_df = filtered_df[filtered_df['Kutir Name'].isin(selected_kutir_names)]
+
+# Multiselect for Kutir Type
+with row2_col4:
+    kutir_types = sorted(filtered_df['Type of Kutir'].dropna().unique())
+    selected_kutirs = st.multiselect('Select Kutir Type', options=["All"] + kutir_types, default=["All"])
+    if "All" not in selected_kutirs:
+        filtered_df = filtered_df[filtered_df['Type of Kutir'].isin(selected_kutirs)]
 
 # KPI Section
 st.markdown("""<style>
@@ -168,12 +189,90 @@ st.download_button(
 )
 
 ## fig2
-fig2 = px.bar(agg_kutir_df, x='Period', y='Attendance of Students', color='Type of Kutir', barmode='stack',
-              title=f"Kutir Type vs Period ({frequency})")
+# Custom color mapping for Kutir Types
+kutir_color_map = {
+    "Study Center": "#160642",  # Blue
+    "Seva Kutir": "#aec7e8",     # Light Blue
+    "Shiksha Kutir": "#4c78a8", # Darker Blue
+    # Add more mappings if more types exist
+}
+
+# Use only colors that are in the data
+types_in_data = agg_kutir_df['Type of Kutir'].unique()
+color_map_filtered = {k: v for k, v in kutir_color_map.items() if k in types_in_data}
+
+# fig2
+fig2 = px.bar(
+    agg_kutir_df,
+    x='Period',
+    y='Attendance of Students',
+    color='Type of Kutir',
+    color_discrete_map=color_map_filtered,
+    barmode='stack',
+    title=f"Kutir Type vs Period ({frequency})"
+)
 fig2.update_layout(margin=dict(l=20, r=20, t=40, b=20))
 fig2.update_xaxes(type='category', tickangle=45)
 st.plotly_chart(fig2, use_container_width=True)
+#------------------------------------------------------------------------------------------------------
+# Aggregate attendance by District and Period
+kutir_latest_period = sorted(detailed_df['Period'].dropna().unique())[-2:]
+kutir_latest_df = detailed_df[detailed_df['Period'].isin(kutir_latest_period)]
+kutir_latest_df['District'] = kutir_latest_df['District'] +'-'+ kutir_latest_df['Period']
 
+fig3a_df = kutir_latest_df.groupby(['District', 'Kutir Name'])['Attendance of Students'].sum().reset_index()
+
+fig3a_df['Attendance Category'] = fig3a_df['Attendance of Students'].apply(data_object.categorize)
+
+attendance_bins_by_district = (
+    fig3a_df.groupby(['District', 'Attendance Category'])
+    .size()
+    .unstack(fill_value=0)
+    .reindex(columns=['<50', '50-75', '76-100', '100+'], fill_value=0)  # Ensure all categories appear
+    .reset_index()
+)
+avg_attendance_per_district = (
+    fig3a_df.groupby('District')['Attendance of Students']
+    .mean()
+    .reset_index()
+    .rename(columns={'Attendance of Students': 'Average Attendance'})
+)
+fig3_df = pd.merge(attendance_bins_by_district, avg_attendance_per_district, on='District')
+
+excel_buffer = BytesIO()
+fig3_df.to_excel(excel_buffer, index=False, engine='xlsxwriter')
+excel_buffer.seek(0)
+st.download_button(
+    label="Download Data as Excel",
+    data=excel_buffer,
+    file_name="District_Kurit_Attendance_Bucket.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
+# Group by both District and Attendance Category
+attendance_bins_by_district_2 = (
+    fig3a_df.groupby(['District', 'Attendance Category'])
+            .size()
+            .reset_index(name='Number of Kutirs')
+)
+
+# Optional: sort category labels
+attendance_bins_by_district_2['Attendance Category'] = pd.Categorical(
+    attendance_bins_by_district_2['Attendance Category'],
+    categories=['<50', '50-75', '76-100', '100+'],
+    ordered=True
+)
+# Pivot for horizontal bar chart
+fig3 = px.bar(
+    attendance_bins_by_district_2,
+    x='District',
+    y='Number of Kutirs',
+    color='Attendance Category',
+    barmode='stack',
+    title=f'Kutir Attendance Category Distribution by District({frequency})'
+)
+st.plotly_chart(fig3, use_container_width=True)
+#------------------------------------------------------------------------------------------------------
 # Detailed Table
 st.markdown("### Detailed Session Data")
 columns_to_display = st.multiselect("Select Columns to Display", options=filtered_df.columns.tolist(), default=['Date', 'Shift', 'Teachers Name', 'Attendance of Students', 'Type of Kutir', 'Kutir Name'])
