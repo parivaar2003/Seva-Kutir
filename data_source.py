@@ -20,7 +20,7 @@ def singleton(cls):
 class data:
     def __init__(self):
         # Load from Excel
-        self.sheet = pd.read_excel('Parivaar_Kutirs_MocK_Data.xlsx', sheet_name='Mock_Data')
+        self.sheet = pd.read_excel('Parivaar_Kutirs_Mock_Data.xlsx', sheet_name='Mock_Data')
         self.rename_columns()
         self.make_columns_unique()
         self.convert_column_types()
