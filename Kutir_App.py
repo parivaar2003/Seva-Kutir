@@ -24,6 +24,7 @@ with reload_col:
 data_object = data()
 df = data_object.sheet
 filtered_df = df.copy()
+st.write(filtered_df)
 
 # Filters
 st.markdown("### Filters")
