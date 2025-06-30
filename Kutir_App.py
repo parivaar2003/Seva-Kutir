@@ -23,6 +23,7 @@ with reload_col:
 # Load data
 data_object = data()
 df = data_object.sheet
+st.write("Final columns received from data_source:", df.columns.tolist())
 filtered_df = df.copy()
 
 # Filters
