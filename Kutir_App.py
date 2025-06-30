@@ -22,7 +22,6 @@ with reload_col:
 
 # Load data
 data_object = data()
-st.write(data_object)
 df = data_object.sheet
 filtered_df = df.copy()
 
