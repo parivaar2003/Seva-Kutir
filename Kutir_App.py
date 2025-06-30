@@ -23,8 +23,13 @@ with reload_col:
 # Load data
 data_object = data()
 df = data_object.sheet
+st.error("--- DEBUGGING COLUMN NAMES ---")
+st.write("The app is trying to access the key: `'District'`")
+st.write("Here are the actual column names found in the DataFrame:")
+for col in df.columns:
+    st.write(f"Column Name: `'{col}'` (Length: {len(col)})")
+st.error("--- END OF DEBUGGING ---")
 filtered_df = df.copy()
-st.write(filtered_df)
 
 # Filters
 st.markdown("### Filters")
@@ -102,7 +107,7 @@ with row1_col5:
 row2_col1, row2_col2, row2_col3, row2_col4 = st.columns(4)
 
 with row2_col1:
-    district_options = sorted(filtered_df['District'].dropna().unique().tolist())
+    district_options = sorted(filtered_df['Districts'].dropna().unique().tolist())
     district_options.insert(0, "All")
     selected_districts = st.multiselect("Select District(s)", district_options, default=["All"])
     if 'All' not in selected_districts:
