@@ -23,12 +23,6 @@ with reload_col:
 # Load data
 data_object = data()
 df = data_object.sheet
-st.error("--- DEBUGGING COLUMN NAMES ---")
-st.write("The app is trying to access the key: `'District'`")
-st.write("Here are the actual column names found in the DataFrame:")
-for col in df.columns:
-    st.write(f"Column Name: `'{col}'` (Length: {len(col)})")
-st.error("--- END OF DEBUGGING ---")
 filtered_df = df.copy()
 
 # Filters
