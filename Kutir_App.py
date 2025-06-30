@@ -22,9 +22,9 @@ with reload_col:
 
 # Load data
 data_object = data()
+st.write(data)
 df = data_object.sheet
 filtered_df = df.copy()
-st.write(filtered_df)
 
 # Filters
 st.markdown("### Filters")
