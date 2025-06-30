@@ -51,8 +51,15 @@ class data:
         final_unique_headers = self.make_columns_unique(cleaned_headers)
         
         self.sheet = pd.DataFrame(data_rows, columns=final_unique_headers)
-        print(self.sheet)
-        #self.rename_columns()
+
+        kutir_name_cols = [col for col in self.sheet.columns if col.startswith('Kutir Name')]
+        if len(kutir_name_cols) > 1:
+        consolidated_names = self.sheet[kutir_name_cols].apply(
+            lambda row: row.dropna().iloc[0] if not row.dropna().empty else None,
+            axis=1
+        self.sheet.drop(columns=kutir_name_cols, inplace=True)
+        self.sheet['Kutir Name'] = consolidated_names
+            
         self.convert_column_types()
         self.precompute_periods()
 
