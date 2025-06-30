@@ -40,11 +40,15 @@ class data:
         
         # Authorize gspread with the SCOPED credentials
         client = gspread.authorize(scoped_creds)
-        
-        # Now you can use the client to open your sheet...
         spreadsheet = client.open_by_url(r'https://docs.google.com/spreadsheets/d/1z0BC-PkJi4NI2z7sl4eNpIsejmDVYvsrIB5-jgBomY4/edit?usp=sharing')
         worksheet = spreadsheet.get_worksheet(0)
-        self.sheet = pd.DataFrame(worksheet.get_all_records())
+        all_values = worksheet.get_all_values()
+
+        header_row = all_values[0]
+        data_rows = all_values[1:]
+        unique_headers = self.make_columns_unique(header_row)
+        
+        self.sheet = pd.DataFrame(data_rows, columns=unique_headers)
         self.rename_columns()
         self.make_columns_unique()
         self.convert_column_types()
@@ -83,7 +87,7 @@ class data:
         self.sheet.rename(columns=rename_map, inplace=True)
 
     def make_columns_unique(self):
-        columns = self.sheet.columns
+        columns = header_list  # Use the passed list
         counts = {}
         new_columns = []
         for col in columns:
@@ -91,9 +95,9 @@ class data:
                 counts[col] += 1
                 new_columns.append(f"{col}.{counts[col]}")
             else:
-                counts[col] = 0 # Initialize count for new column
+                counts[col] = 0
                 new_columns.append(col)
-        self.sheet.columns = new_columns
+        return new_columns  # Return the corrected list
 
     def convert_column_types(self):
         date_time_cols = ['Timestamp', 'Datetime', 'Date']
