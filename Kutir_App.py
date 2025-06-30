@@ -132,10 +132,10 @@ with row2_col3:
         st.warning("No data for selected Kutir Names.")
 
 with row2_col4:
-    kutir_types = sorted(filtered_df['Type of Kutir'].dropna().unique().tolist())
+    kutir_types = sorted(filtered_df['Kutir'].dropna().unique().tolist())
     selected_kutirs = st.multiselect('Select Kutir Type', options=["All"] + kutir_types, default=["All"])
     if "All" not in selected_kutirs:
-        filtered_df = filtered_df[filtered_df['Type of Kutir'].isin(selected_kutirs)]
+        filtered_df = filtered_df[filtered_df['Kutir'].isin(selected_kutirs)]
     if filtered_df.empty and "All" not in selected_kutirs:
         st.warning("No data for selected Kutir Types.")
 
@@ -260,14 +260,14 @@ if not agg_kutir_df.empty:
         "Shiksha Kutir": "#4c78a8",
     }
 
-    types_in_data = agg_kutir_df['Type of Kutir'].unique()
+    types_in_data = agg_kutir_df['Kutir'].unique()
     color_map_filtered = {k: v for k, v in kutir_color_map.items() if k in types_in_data}
 
     fig2 = px.bar(
         agg_kutir_df,
         x='Period',
         y='Attendance of Students',
-        color='Type of Kutir',
+        color='Kutir',
         color_discrete_map=color_map_filtered,
         barmode='stack',
         title=f"Kutir Type vs Period ({frequency})"
@@ -399,7 +399,7 @@ else:
     st.info("No data available to display Kutir Attendance Category Distribution for the selected filters.")
 
 st.markdown("### Detailed Session Data")
-columns_to_display = st.multiselect("Select Columns to Display", options=filtered_df.columns.tolist(), default=['Date', 'Shift', 'Teachers Name', 'Attendance of Students', 'Type of Kutir', 'Kutir Name'])
+columns_to_display = st.multiselect("Select Columns to Display", options=filtered_df.columns.tolist(), default=['Date', 'Shift', 'Teachers Name', 'Attendance of Students', 'Kutir', 'Kutir Name'])
 excel_buffer = BytesIO()
 filtered_df[columns_to_display].to_excel(excel_buffer, index=False, engine='xlsxwriter')
 excel_buffer.seek(0)
