@@ -26,10 +26,23 @@ key_data=json.loads(base64.b64decode(key_base64))
 @singleton
 class data:
     def __init__(self):
-        scope=['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
-        creds=service_account.Credentials.from_service_account_info(key_data)
-        client=gspread.authorize(creds)
-        spreadsheet=client.open_by_url(r'https://docs.google.com/spreadsheets/d/1z0BC-PkJi4NI2z7sl4eNpIsejmDVYvsrIB5-jgBomY4/edit?usp=sharing')
+        scope = [
+            'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/drive',
+            'https://spreadsheets.google.com/feeds'
+        ]
+        
+        # Create the base credentials from your key data
+        creds = service_account.Credentials.from_service_account_info(key_data)
+        
+        # Create a new credentials object WITH the specified scopes
+        scoped_creds = creds.with_scopes(scope)
+        
+        # Authorize gspread with the SCOPED credentials
+        client = gspread.authorize(scoped_creds)
+        
+        # Now you can use the client to open your sheet...
+        spreadsheet = client.open_by_url(r'https://docs.google.com/spreadsheets/d/1z0BC-PkJi4NI2z7sl4eNpIsejmDVYvsrIB5-jgBomY4/edit?usp=sharing')
         worksheet = spreadsheet.get_worksheet(0)
         self.sheet = pd.DataFrame(worksheet.get_all_records())
         self.rename_columns()
