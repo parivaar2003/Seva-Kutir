@@ -19,8 +19,10 @@ def singleton(cls):
 @singleton
 class data:
     def __init__(self):
-        # Load from Excel
-        self.sheet = pd.read_excel('Parivaar_Kutirs_Mock_Data.xlsx', sheet_name='Mock_Data')
+        scope=['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+        creds=ServiceAccountCredentials.from_json_keyfile_name(r'absolute-dahlia-431910-v9-15667d7b7aed.json',scope)
+        client=gspread.authorize(creds)
+        self.sheet=client.open_by_url(r'https://docs.google.com/spreadsheets/d/1z0BC-PkJi4NI2z7sl4eNpIsejmDVYvsrIB5-jgBomY4/edit?usp=sharing').worksheets()
         self.rename_columns()
         self.make_columns_unique()
         self.convert_column_types()
