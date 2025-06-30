@@ -1,6 +1,8 @@
 # data_source.py
 import pandas as pd
 from datetime import datetime, timedelta
+import json
+import base64
 from statistics import mean
 
 # Singleton decorator for caching
