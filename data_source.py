@@ -29,7 +29,9 @@ class data:
         scope=['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
         creds=service_account.Credentials.from_service_account_info(key_data)
         client=gspread.authorize(creds)
-        self.sheet=client.open_by_url(r'https://docs.google.com/spreadsheets/d/1z0BC-PkJi4NI2z7sl4eNpIsejmDVYvsrIB5-jgBomY4/edit?usp=sharing').worksheets()
+        spreadsheet=client.open_by_url(r'https://docs.google.com/spreadsheets/d/1z0BC-PkJi4NI2z7sl4eNpIsejmDVYvsrIB5-jgBomY4/edit?usp=sharing')
+        worksheet = spreadsheet.get_worksheet(0)
+        self.sheet = pd.DataFrame(worksheet.get_all_records())
         self.rename_columns()
         self.make_columns_unique()
         self.convert_column_types()
