@@ -399,7 +399,7 @@ else:
     st.info("No data available to display Kutir Attendance Category Distribution for the selected filters.")
 
 st.markdown("### Detailed Session Data")
-columns_to_display = st.multiselect("Select Columns to Display", options=filtered_df.columns.tolist(), default=['Date', 'Shift', 'Teachers Name', 'Attendance of Students', 'Kutir', 'Kutir Name'])
+columns_to_display = st.multiselect("Select Columns to Display", options=filtered_df.columns.tolist(), default=['Date', 'Shift', 'Teacher's Name', 'Attendance of Students', 'Kutir', 'Kutir Name'])
 excel_buffer = BytesIO()
 filtered_df[columns_to_display].to_excel(excel_buffer, index=False, engine='xlsxwriter')
 excel_buffer.seek(0)
