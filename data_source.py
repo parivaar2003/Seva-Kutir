@@ -46,10 +46,11 @@ class data:
 
         header_row = all_values[0]
         data_rows = all_values[1:]
-        unique_headers = self.make_columns_unique(header_row)
+        messy_but_unique_headers = self.make_columns_unique(header_row)
+        cleaned_headers = pd.Series(messy_but_unique_headers).str.split('-').str[0].str.strip().tolist()
+        final_unique_headers = self.make_columns_unique(cleaned_headers)
         
-        self.sheet = pd.DataFrame(data_rows, columns=unique_headers)
-        self.sheet.columns = self.sheet.columns.str.split('-').str[0].str.strip()
+        self.sheet = pd.DataFrame(data_rows, columns=final_unique_headers)
         #self.rename_columns()
         self.convert_column_types()
         self.precompute_periods()
