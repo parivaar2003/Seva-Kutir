@@ -102,7 +102,7 @@ with row1_col5:
 row2_col1, row2_col2, row2_col3, row2_col4 = st.columns(4)
 
 with row2_col1:
-    district_options = sorted(filtered_df['Districts'].dropna().unique().tolist())
+    district_options = sorted(filtered_df['District'].dropna().unique().tolist())
     district_options.insert(0, "All")
     selected_districts = st.multiselect("Select District(s)", district_options, default=["All"])
     if 'All' not in selected_districts:
