@@ -5,6 +5,7 @@ import json
 import base64
 from statistics import mean
 from google.oauth2 import service_account
+import gspread
 
 # Singleton decorator for caching
 def singleton(cls):
