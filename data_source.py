@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import json
 import base64
 from statistics import mean
+from google.oauth2 import service_account
 
 # Singleton decorator for caching
 def singleton(cls):
