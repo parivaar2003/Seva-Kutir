@@ -50,7 +50,6 @@ class data:
         
         self.sheet = pd.DataFrame(data_rows, columns=unique_headers)
         self.rename_columns()
-        self.make_columns_unique()
         self.convert_column_types()
         self.precompute_periods()
 
