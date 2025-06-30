@@ -86,7 +86,7 @@ class data:
 
         self.sheet.rename(columns=rename_map, inplace=True)
 
-    def make_columns_unique(self):
+    def make_columns_unique(self, header_list):
         columns = header_list  # Use the passed list
         counts = {}
         new_columns = []
@@ -97,7 +97,7 @@ class data:
             else:
                 counts[col] = 0
                 new_columns.append(col)
-        return new_columns  # Return the corrected list
+        return new_columns
 
     def convert_column_types(self):
         date_time_cols = ['Timestamp', 'Datetime', 'Date']
