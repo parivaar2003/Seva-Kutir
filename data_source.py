@@ -51,7 +51,7 @@ class data:
         final_unique_headers = self.make_columns_unique(cleaned_headers)
         
         self.sheet = pd.DataFrame(data_rows, columns=final_unique_headers)
-        st.write(self.sheet)
+        print(self.sheet)
         #self.rename_columns()
         self.convert_column_types()
         self.precompute_periods()
