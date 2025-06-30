@@ -51,6 +51,7 @@ class data:
         self.sheet = pd.DataFrame(data_rows, columns=unique_headers)
         self.sheet.columns = self.sheet.columns.str.split(' - ').str[0].str.strip()
         self.rename_columns()
+        print(self.sheet.columns.tolist())
         self.convert_column_types()
         self.precompute_periods()
 
