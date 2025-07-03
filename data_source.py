@@ -305,8 +305,9 @@ class data:
         periods = agg_df['Period'].nunique() if not agg_df.empty else 0
         max_attendance = agg_df['Attendance of Students'].max() if not agg_df.empty else 0
         avg_attendance = agg_df['Attendance of Students'].mean() if not agg_df.empty else 0
+        max_period = agg_df[(agg_df['Attendance of Students'] == max_attendance)]['Period'].unique()[0]
 
-        return periods, max_attendance, avg_attendance
+        return periods, max_attendance, avg_attendance, max_period
 
     def categorize(self, attendance):
         if pd.isna(attendance):

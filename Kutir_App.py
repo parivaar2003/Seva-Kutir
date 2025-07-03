@@ -153,7 +153,7 @@ kpi1, kpi2, kpi3 = st.columns(3)
 
 agg_df, detailed_df = data_object.aggregate_attendance(filtered_df, frequency)
 
-periods, max_students, avg_attendance = data_object.calculate_kpis(agg_df)
+periods, max_students, avg_attendance, max_period = data_object.calculate_kpis(agg_df)
 
 period_label = "Days" if frequency == "Daily" else "Weeks" if frequency == "Weekly" else "Months" if frequency == "Monthly" else "Years"
 
@@ -169,7 +169,7 @@ with kpi2:
     st.markdown(f"""
         <div class='metric-card'>
             <h3>Max Attendance in a {period_label[:-1] if period_label != 'Days' else 'Day'}</h3>
-            <h2>{int(max_students) if not pd.isna(max_students) else 0}</h2>
+            <h2>{int(max_students) if not pd.isna(max_students) else 0} | {max_period}</h2>
         </div>
     """, unsafe_allow_html=True)
 
