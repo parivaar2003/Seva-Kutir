@@ -61,6 +61,7 @@ class data:
             
         self.convert_column_types()
         self.precompute_periods()
+        print(self.sheet)
 
     def rename_columns(self):
         rename_map = {}
