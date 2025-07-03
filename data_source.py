@@ -54,15 +54,16 @@ class data:
         self.sheet['Timestamp'] = pd.to_datetime(self.sheet['Timestamp'])
         self.sheet['Date']=self.sheet['Timestamp'].dt.date
 
-        kutir_name_cols = [col for col in self.sheet.columns if col.startswith('Kutir Name')]
-        if len(kutir_name_cols) > 1:
-            consolidated_names = self.sheet[kutir_name_cols].apply(lambda row: row.dropna().iloc[0] if not row.dropna().empty else None,axis=1)
-       
-        self.sheet.drop(columns=kutir_name_cols, inplace=True)
-        self.sheet['Kutir Name'] = consolidated_names
-            
+        self.combined_duplicate_cols('Kutir Name')
+        self.combined_duplicate_cols('Cluster')
+
         self.convert_column_types()
         self.precompute_periods()
+
+    def combined_duplicate_cols(self, column_like):
+        duplicate_name_cols = [col for col in self.sheet.columns if col.startswith(column_like)]
+        self.sheet[column_like] = self.sheet[duplicate_name_cols].apply(lambda row: ''.join(row.dropna().astype(str)), axis=1)
+        self.sheet.drop(columns=duplicate_name_cols[1:], inplace=True)
 
     def rename_columns(self):
         rename_map = {}
@@ -76,8 +77,8 @@ class data:
                 rename_map[col] = 'Shift'
             elif 'Attendance of Students' in col:
                 rename_map[col] = 'Attendance of Students'
-            elif 'Type of Kutir' in col:
-                rename_map[col] = 'Type of Kutir'
+            elif 'Kutir' in col:
+                rename_map[col] = 'Kutir'
             elif 'State' in col:
                 rename_map[col] = 'State'
             elif 'District' in col:
@@ -201,7 +202,7 @@ class data:
         if frequency == "Daily":
             df_copy['Period'] = df_copy['Daily Period']
             # Detailed df is sum of attendance per session per day
-            detailed_df = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Type of Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum().reset_index()
+            detailed_df = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum().reset_index()
             agg_df = detailed_df.groupby('Period')['Attendance of Students'].sum().reset_index()
 
         elif frequency == "Weekly":
@@ -209,12 +210,12 @@ class data:
 
             # Step 1: Calculate daily total attendance per Kutir
             # This crucial step now sums all shifts for a given day for a kutir
-            required_cols_daily = ['Period', 'Date', 'Kutir Name', 'Type of Kutir', 'State', 'District', 'Cluster', 'Attendance of Students'] # Removed 'Shift' from here
+            required_cols_daily = ['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster', 'Attendance of Students'] # Removed 'Shift' from here
             if not all(col in df_copy.columns for col in required_cols_daily):
                 print(f"Warning: Missing required columns for weekly daily_kutir_attendance. Required: {required_cols_daily}, Found: {df_copy.columns.tolist()}")
                 return pd.DataFrame(), pd.DataFrame()
 
-            daily_kutir_attendance = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Type of Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum()
+            daily_kutir_attendance = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum()
             daily_kutir_attendance.rename(columns={'Attendance of Students': 'Daily Attendance'}, inplace=True)
             
             # Detailed DF for other charts (Kutir Type vs Period)
@@ -247,17 +248,18 @@ class data:
             df_copy['Period'] = df_copy['Monthly Period']
             # For monthly, if you want daily sums first, similar logic applies as weekly
             # but for now, it's summing all sessions for the month
-            detailed_df = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Type of Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum()
+            detailed_df = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum()
             agg_df = detailed_df.groupby('Period')['Attendance of Students'].sum().reset_index()
 
 
         elif frequency == "Yearly":
             df_copy['Period'] = df_copy['Yearly Period']
             # Similar to monthly, sums all sessions for the year
-            detailed_df = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Type of Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum()
+            detailed_df = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum()
             agg_df = detailed_df.groupby('Period')['Attendance of Students'].sum().reset_index()
 
         else:
+            print('We are here')
             detailed_df = pd.DataFrame()
             agg_df = pd.DataFrame()
 
@@ -268,14 +270,14 @@ class data:
             return pd.DataFrame()
 
         if frequency == "Weekly":
-            required_cols_kutir_agg = ['Period', 'Type of Kutir', 'Kutir Name', 'Attendance of Students', 'Date']
+            required_cols_kutir_agg = ['Period', 'Kutir', 'Kutir Name', 'Attendance of Students', 'Date']
             if not all(col in detailed_df.columns for col in required_cols_kutir_agg):
                 print(f"Warning: Missing required columns for weekly aggregate_kutir_attendance. Required: {required_cols_kutir_agg}, Found: {detailed_df.columns.tolist()}")
                 return pd.DataFrame()
 
             # detailed_df for weekly already holds daily sums per kutir (due to aggregate_attendance change)
-            # So, now group by Period, Type of Kutir, Kutir Name to sum these daily sums and count days
-            daily_attendance_per_kutir_type = detailed_df.groupby(['Period', 'Type of Kutir', 'Kutir Name'], as_index=False).agg(
+            # So, now group by Period, Kutir, Kutir Name to sum these daily sums and count days
+            daily_attendance_per_kutir_type = detailed_df.groupby(['Period', 'Kutir', 'Kutir Name'], as_index=False).agg(
                 sum_daily_attendance=('Attendance of Students', 'sum'), # This is the sum of daily sums for a kutir in a week
                 count_days=('Date', 'nunique') # Count unique days for each kutir in that week
             )
@@ -283,18 +285,18 @@ class data:
                 lambda row: row['sum_daily_attendance'] / row['count_days'] if row['count_days'] > 0 else 0, axis=1
             )
             
-            agg_kutir_df = daily_attendance_per_kutir_type.groupby(['Period', 'Type of Kutir'], as_index=False)['Kutir Weekly Avg Attendance'].mean()
+            agg_kutir_df = daily_attendance_per_kutir_type.groupby(['Period', 'Kutir'], as_index=False)['Kutir Weekly Avg Attendance'].mean()
             agg_kutir_df.rename(columns={'Kutir Weekly Avg Attendance': 'Attendance of Students'}, inplace=True)
 
             agg_kutir_df = agg_kutir_df.merge(self.week_ranges, left_on='Period', right_on='Weekly Period', how='left')
 
         else:
-            required_cols_non_weekly = ['Period', 'Type of Kutir', 'Attendance of Students']
+            required_cols_non_weekly = ['Period', 'Kutir', 'Attendance of Students']
             if not all(col in detailed_df.columns for col in required_cols_non_weekly):
                 print(f"Warning: Missing required columns for non-weekly aggregate_kutir_attendance. Required: {required_cols_non_weekly}, Found: {detailed_df.columns.tolist()}")
                 return pd.DataFrame()
 
-            agg_kutir_df = detailed_df.groupby(['Period', 'Type of Kutir'], as_index=False)['Attendance of Students'].sum()
+            agg_kutir_df = detailed_df.groupby(['Period', 'Kutir'], as_index=False)['Attendance of Students'].sum()
 
         return agg_kutir_df
 
@@ -317,3 +319,10 @@ class data:
             return '76-100'
         else:
             return '100+'
+        
+
+# # Load data
+# data_object = data()
+# df = data_object.sheet
+# filtered_df = df.copy()
+# print(filtered_df['Date'])
