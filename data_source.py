@@ -61,7 +61,6 @@ class data:
             
         self.convert_column_types()
         self.precompute_periods()
-        print(self.sheet)
 
     def rename_columns(self):
         rename_map = {}
@@ -130,6 +129,7 @@ class data:
 
     def precompute_periods(self):
         df = self.sheet
+        print(df)
 
         # Ensure 'Date' column is datetime
         if 'Date' in df.columns and not pd.api.types.is_datetime64_any_dtype(df['Date']):
