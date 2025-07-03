@@ -129,7 +129,7 @@ class data:
 
     def precompute_periods(self):
         df = self.sheet
-        print(df)
+        print(df['Date'])
 
         # Ensure 'Date' column is datetime
         if 'Date' in df.columns and not pd.api.types.is_datetime64_any_dtype(df['Date']):
