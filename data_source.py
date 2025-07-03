@@ -51,6 +51,7 @@ class data:
         final_unique_headers = self.make_columns_unique(cleaned_headers)
         
         self.sheet = pd.DataFrame(data_rows, columns=final_unique_headers)
+        self.sheet['Timestamp'] = pd.to_datetime(self.sheet['Timestamp'])
         self.sheet['Date']=self.sheet['Timestamp'].dt.date
 
         kutir_name_cols = [col for col in self.sheet.columns if col.startswith('Kutir Name')]
