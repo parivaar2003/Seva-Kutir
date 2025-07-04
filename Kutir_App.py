@@ -62,7 +62,7 @@ with row1_col2:
         min_date_available = datetime.now().date()
         max_date_available = datetime.now().date()
 
-    start_date = st.date_input('Start Date', value=min_date_available)
+    start_date = st.date_input('Start Date', value=min_date_available, min_value=min_date_available, max_value=max_date_available)
     if not filtered_df.empty:
         filtered_df = filtered_df[filtered_df['Date'].dt.date >= start_date]
 
@@ -75,7 +75,7 @@ with row1_col3:
     else:
         current_max_date = start_date
 
-    end_date = st.date_input('End Date', value=current_max_date, min_value=start_date)
+    end_date = st.date_input('End Date', value=current_max_date, min_value=start_date, max_value=max_date_available)
     if end_date < start_date:
         st.warning("End Date cannot be before Start Date. Resetting End Date to Start Date.")
         end_date = start_date
