@@ -261,8 +261,6 @@ if not agg_kutir_df.empty:
 
     types_in_data = agg_kutir_df['Kutir'].unique()
     color_map_filtered = {k: v for k, v in kutir_color_map.items() if k in types_in_data}
-    agg_kutir_df['Period'] = pd.to_datetime(agg_kutir_df['Period'])
-    agg_kutir_df = agg_kutir_df.sort_values(by='Period')
 
     fig2 = px.bar(
         agg_kutir_df,
