@@ -262,10 +262,7 @@ if not agg_kutir_df.empty:
     types_in_data = agg_kutir_df['Kutir'].unique()
     color_map_filtered = {k: v for k, v in kutir_color_map.items() if k in types_in_data}
 
-    # 1. Force to string and strip any hidden whitespace. This is safe for all frequencies.
-    agg_kutir_df['Period'] = agg_kutir_df['Period'].astype(str).str.strip()
-    
-    # 2. Clean and convert the 'Period' column by overwriting it directly.
+    # 1. Clean and convert the 'Period' column by overwriting it directly, handles all cleaning and conversion in one go.
     if frequency == "Weekly":
         # Use the specific format for "YYYY-W##" strings
         agg_kutir_df['Period'] = pd.to_datetime(
@@ -280,20 +277,10 @@ if not agg_kutir_df.empty:
             errors='coerce'
         )
     
-    # 3. Debug block to check for bad rows.
-    bad_rows = agg_kutir_df[agg_kutir_df['Period_Cleaned'].isnull()]
-    if not bad_rows.empty:
-        st.warning("The following rows contained unreadable dates and were removed from the chart:")
-        st.dataframe(bad_rows[['Period']]) # Display only the original bad period string
+    # 2. Drop any rows where the date conversion failed.
+    agg_kutir_df.dropna(subset=['Period'], inplace=True)
     
-    # 4. Drop any rows that failed conversion.
-    agg_kutir_df.dropna(subset=['Period_Cleaned'], inplace=True)
-    
-    # 5. Rename the cleaned column back to 'Period' for plotting.
-    if 'Period_Cleaned' in agg_kutir_df.columns:
-        agg_kutir_df.rename(columns={'Period_Cleaned': 'Period'}, inplace=True)
-    
-    # 6. Finally, sort the DataFrame.
+    # 3. Sort the DataFrame.
     agg_kutir_df = agg_kutir_df.sort_values(by='Period')
 
     fig2 = px.bar(
