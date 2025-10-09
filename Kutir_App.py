@@ -265,22 +265,22 @@ if not agg_kutir_df.empty:
     # 1. Force to string and strip any hidden whitespace. This is safe for all frequencies.
     agg_kutir_df['Period'] = agg_kutir_df['Period'].astype(str).str.strip()
     
-    # 2. Re-introduce the logic to handle different date formats based on frequency.
+    # 2. Clean and convert the 'Period' column by overwriting it directly.
     if frequency == "Weekly":
-        # Use the specific format required for "YYYY-W##" strings.
-        agg_kutir_df['Period_Cleaned'] = pd.to_datetime(
-            agg_kutir_df['Period'] + '-1', 
-            format='%Y-W%U-%w', 
+        # Use the specific format for "YYYY-W##" strings
+        agg_kutir_df['Period'] = pd.to_datetime(
+            agg_kutir_df['Period'].astype(str).str.strip() + '-1',
+            format='%Y-W%U-%w',
             errors='coerce'
         )
     else:
-        # Use the standard conversion for all other frequencies.
-        agg_kutir_df['Period_Cleaned'] = pd.to_datetime(
-            agg_kutir_df['Period'], 
+        # Use the standard conversion for all other frequencies
+        agg_kutir_df['Period'] = pd.to_datetime(
+            agg_kutir_df['Period'].astype(str).str.strip(),
             errors='coerce'
         )
     
-    # 3. (Optional) You can keep the debug block to check for bad rows.
+    # 3. Debug block to check for bad rows.
     bad_rows = agg_kutir_df[agg_kutir_df['Period_Cleaned'].isnull()]
     if not bad_rows.empty:
         st.warning("The following rows contained unreadable dates and were removed from the chart:")
