@@ -262,16 +262,38 @@ if not agg_kutir_df.empty:
     types_in_data = agg_kutir_df['Kutir'].unique()
     color_map_filtered = {k: v for k, v in kutir_color_map.items() if k in types_in_data}
 
-    # Force the column to string and strip any hidden whitespace
+    # 1. Force to string and strip any hidden whitespace. This is safe for all frequencies.
     agg_kutir_df['Period'] = agg_kutir_df['Period'].astype(str).str.strip()
     
-    # Convert to datetime, turning any errors into NaT (Not a Time)
-    agg_kutir_df['Period'] = pd.to_datetime(agg_kutir_df['Period'], errors='coerce')
+    # 2. Re-introduce the logic to handle different date formats based on frequency.
+    if frequency == "Weekly":
+        # Use the specific format required for "YYYY-W##" strings.
+        agg_kutir_df['Period_Cleaned'] = pd.to_datetime(
+            agg_kutir_df['Period'] + '-1', 
+            format='%Y-W%U-%w', 
+            errors='coerce'
+        )
+    else:
+        # Use the standard conversion for all other frequencies.
+        agg_kutir_df['Period_Cleaned'] = pd.to_datetime(
+            agg_kutir_df['Period'], 
+            errors='coerce'
+        )
     
-    # Drop any rows that failed to convert
-    agg_kutir_df.dropna(subset=['Period'], inplace=True)
+    # 3. (Optional) You can keep the debug block to check for bad rows.
+    bad_rows = agg_kutir_df[agg_kutir_df['Period_Cleaned'].isnull()]
+    if not bad_rows.empty:
+        st.warning("The following rows contained unreadable dates and were removed from the chart:")
+        st.dataframe(bad_rows[['Period']]) # Display only the original bad period string
     
-    # Sort the DataFrame by the clean date column
+    # 4. Drop any rows that failed conversion.
+    agg_kutir_df.dropna(subset=['Period_Cleaned'], inplace=True)
+    
+    # 5. Rename the cleaned column back to 'Period' for plotting.
+    if 'Period_Cleaned' in agg_kutir_df.columns:
+        agg_kutir_df.rename(columns={'Period_Cleaned': 'Period'}, inplace=True)
+    
+    # 6. Finally, sort the DataFrame.
     agg_kutir_df = agg_kutir_df.sort_values(by='Period')
 
     fig2 = px.bar(
