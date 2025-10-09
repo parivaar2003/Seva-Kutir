@@ -187,81 +187,81 @@ class data:
 
         # Merge week start and end into df
         self.sheet = df.merge(self.week_ranges, on='Weekly Period', how='left')
+        
+    def _calculate_average_attendance(self, df, period_col_name):
+        """
+        A reusable helper method to calculate the average attendance for any period.
+        This logic is now used by Daily, Weekly, Monthly, and Yearly frequencies.
+        """
+        # Set the correct period column for the calculation
+        df['Period'] = df[period_col_name]
 
+        # Step 1: Calculate the total attendance for each Kutir for each unique day.
+        # This correctly sums up multiple shifts in a single day.
+        daily_kutir_attendance = df.groupby(
+            ['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster'],
+            as_index=False
+        )['Attendance of Students'].sum()
+        daily_kutir_attendance.rename(columns={'Attendance of Students': 'Daily Attendance'}, inplace=True)
+        
+        # The 'detailed_df' is this set of daily totals per Kutir.
+        # This is what the stacked bar chart and other detailed views need.
+        detailed_df = daily_kutir_attendance.copy()
+        detailed_df.rename(columns={'Daily Attendance': 'Attendance of Students'}, inplace=True)
+
+        # Step 2: Calculate the average daily attendance for each Kutir over the period.
+        # It's based on the number of days the Kutir was actually present.
+        period_kutir_avg = daily_kutir_attendance.groupby(
+            ['Period', 'Kutir Name'], as_index=False
+        ).agg(
+            sum_daily_attendance=('Daily Attendance', 'sum'),
+            count_days=('Date', 'nunique') # Correctly counts unique days of attendance
+        )
+        
+        period_kutir_avg['Kutir Period Avg Attendance'] = period_kutir_avg.apply(
+            lambda row: row['sum_daily_attendance'] / row['count_days'] if row['count_days'] > 0 else 0,
+            axis=1
+        )
+
+        # Step 3: Calculate the final aggregated value for the trend chart.
+        # This is the average of all the individual Kutir averages for the period.
+        agg_df = period_kutir_avg.groupby(
+            'Period', as_index=False
+        )['Kutir Period Avg Attendance'].mean()
+        agg_df.rename(columns={'Kutir Period Avg Attendance': 'Attendance of Students'}, inplace=True)
+
+        return agg_df, detailed_df
+    
     def aggregate_attendance(self, df, frequency):
         df_copy = df.copy() # Work on a copy
         
         # Ensure 'Date' column is datetime before proceeding
         if 'Date' not in df_copy.columns or not pd.api.types.is_datetime64_any_dtype(df_copy['Date']):
-             # If Date column is missing or not datetime, return empty DFs
-             return pd.DataFrame(), pd.DataFrame()
+            return pd.DataFrame(), pd.DataFrame()
         
-        # Normalize 'Date' to remove time component, ensuring each day is treated as a single entity
+        # Normalize 'Date' to remove the time component
         df_copy['Date'] = df_copy['Date'].dt.normalize()
 
+        # Determine which period column to use based on the selected frequency
         if frequency == "Daily":
-            df_copy['Period'] = df_copy['Daily Period']
-            # Detailed df is sum of attendance per session per day
-            detailed_df = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum().reset_index()
-            agg_df = detailed_df.groupby('Period')['Attendance of Students'].sum().reset_index()
-
+            period_col = 'Daily Period'
         elif frequency == "Weekly":
-            df_copy['Period'] = df_copy['Weekly Period']
-
-            # Step 1: Calculate daily total attendance per Kutir
-            # This crucial step now sums all shifts for a given day for a kutir
-            required_cols_daily = ['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster', 'Attendance of Students'] # Removed 'Shift' from here
-            if not all(col in df_copy.columns for col in required_cols_daily):
-                print(f"Warning: Missing required columns for weekly daily_kutir_attendance. Required: {required_cols_daily}, Found: {df_copy.columns.tolist()}")
-                return pd.DataFrame(), pd.DataFrame()
-
-            daily_kutir_attendance = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum()
-            daily_kutir_attendance.rename(columns={'Attendance of Students': 'Daily Attendance'}, inplace=True)
-            
-            # Detailed DF for other charts (Kutir Type vs Period)
-            # This should contain original data points or daily sums per kutir
-            detailed_df = daily_kutir_attendance.merge(self.week_ranges, left_on='Period', right_on='Weekly Period', how='left')
-            detailed_df.rename(columns={'Daily Attendance': 'Attendance of Students'}, inplace=True) # Renaming for consistency with plotting functions
-
-            # Step 2: Calculate weekly average attendance for EACH KUTIR based on days present
-            weekly_kutir_avg = daily_kutir_attendance.groupby(['Period', 'Kutir Name'], as_index=False).agg(
-                sum_daily_attendance=('Daily Attendance', 'sum'),
-                count_days=('Date', 'nunique') # This correctly counts unique days
-            )
-            
-            print(weekly_kutir_avg)
-            
-            # Handle division by zero for weeks with no data if count_days is 0
-            weekly_kutir_avg['Kutir Weekly Avg Attendance'] = weekly_kutir_avg.apply(
-                lambda row: row['sum_daily_attendance'] / row['count_days'] if row['count_days'] > 0 else 0, axis=1
-            )
-
-            # Step 3: Calculate the overall average weekly attendance (average of kutir weekly averages)
-            # This is the 'agg_df' for the main trend chart and KPIs
-            agg_df = weekly_kutir_avg.groupby('Period', as_index=False)['Kutir Weekly Avg Attendance'].mean()
-            agg_df.rename(columns={'Kutir Weekly Avg Attendance': 'Attendance of Students'}, inplace=True)
-            
-            agg_df = agg_df.merge(self.week_ranges, left_on='Period', right_on='Weekly Period', how='left')
-
-
+            period_col = 'Weekly Period'
         elif frequency == "Monthly":
-            df_copy['Period'] = df_copy['Monthly Period']
-            # For monthly, if you want daily sums first, similar logic applies as weekly
-            # but for now, it's summing all sessions for the month
-            detailed_df = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum()
-            agg_df = detailed_df.groupby('Period')['Attendance of Students'].sum().reset_index()
-
-
+            period_col = 'Monthly Period'
         elif frequency == "Yearly":
-            df_copy['Period'] = df_copy['Yearly Period']
-            # Similar to monthly, sums all sessions for the year
-            detailed_df = df_copy.groupby(['Period', 'Date', 'Kutir Name', 'Kutir', 'State', 'District', 'Cluster'], as_index=False)['Attendance of Students'].sum()
-            agg_df = detailed_df.groupby('Period')['Attendance of Students'].sum().reset_index()
-
+            period_col = 'Yearly Period'
         else:
-            print('We are here')
-            detailed_df = pd.DataFrame()
-            agg_df = pd.DataFrame()
+            # If frequency is invalid, return empty DataFrames
+            return pd.DataFrame(), pd.DataFrame()
+        
+        # Call the unified helper function to perform the calculation
+        agg_df, detailed_df = self._calculate_average_attendance(df_copy, period_col)
+
+        # Special step: For weekly, merge with week range data for display purposes
+        if frequency == "Weekly" and not agg_df.empty:
+            agg_df = agg_df.merge(self.week_ranges, left_on='Period', right_on='Weekly Period', how='left')
+            detailed_df = detailed_df.merge(self.week_ranges, left_on='Period', right_on='Weekly Period', how='left')
 
         return agg_df, detailed_df
     
