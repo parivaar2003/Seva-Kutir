@@ -239,7 +239,11 @@ if not agg_df.empty:
 else:
     st.info("No data available to display Attendance Trend Chart for the selected filters.")
 
-agg_kutir_df = data_object.aggregate_kutir_attendance(detailed_df, frequency)
+#OLD CODE
+#agg_kutir_df = data_object.aggregate_kutir_attendance(detailed_df, frequency)
+
+# NEW CODE - This correctly aggregates the daily totals from detailed_df
+agg_kutir_df = detailed_df.groupby(['Period', 'Kutir'])['Attendance of Students'].sum().reset_index()
 
 if not agg_kutir_df.empty:
     export_buffer = BytesIO()
