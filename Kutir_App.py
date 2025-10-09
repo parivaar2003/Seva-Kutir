@@ -262,6 +262,19 @@ if not agg_kutir_df.empty:
     types_in_data = agg_kutir_df['Kutir'].unique()
     color_map_filtered = {k: v for k, v in kutir_color_map.items() if k in types_in_data}
 
+    # 1. (NEW STEP) Ensure all values are strings to prevent mixed-type issues.
+    agg_kutir_df['Period'] = agg_kutir_df['Period'].astype(str)
+    
+    # 2. Convert to datetime using the logic we established before.
+    if frequency == "Weekly":
+        agg_kutir_df['Period'] = pd.to_datetime(agg_kutir_df['Period'] + '-1', format='%Y-W%U-%w')
+    else:
+        agg_kutir_df['Period'] = pd.to_datetime(agg_kutir_df['Period'])
+    # --- FIX ENDS HERE ---
+    
+    # 3. Sort the DataFrame by the now-correct Period column.
+    agg_kutir_df = agg_kutir_df.sort_values(by='Period')
+
     fig2 = px.bar(
         agg_kutir_df,
         x='Period',
