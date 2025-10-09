@@ -262,17 +262,16 @@ if not agg_kutir_df.empty:
     types_in_data = agg_kutir_df['Kutir'].unique()
     color_map_filtered = {k: v for k, v in kutir_color_map.items() if k in types_in_data}
 
-    # 1. (NEW STEP) Ensure all values are strings to prevent mixed-type issues.
-    agg_kutir_df['Period'] = agg_kutir_df['Period'].astype(str)
+    # Force the column to string and strip any hidden whitespace
+    agg_kutir_df['Period'] = agg_kutir_df['Period'].astype(str).str.strip()
     
-    # 2. Convert to datetime using the logic we established before.
-    if frequency == "Weekly":
-        agg_kutir_df['Period'] = pd.to_datetime(agg_kutir_df['Period'] + '-1', format='%Y-W%U-%w')
-    else:
-        agg_kutir_df['Period'] = pd.to_datetime(agg_kutir_df['Period'])
-    # --- FIX ENDS HERE ---
+    # Convert to datetime, turning any errors into NaT (Not a Time)
+    agg_kutir_df['Period'] = pd.to_datetime(agg_kutir_df['Period'], errors='coerce')
     
-    # 3. Sort the DataFrame by the now-correct Period column.
+    # Drop any rows that failed to convert
+    agg_kutir_df.dropna(subset=['Period'], inplace=True)
+    
+    # Sort the DataFrame by the clean date column
     agg_kutir_df = agg_kutir_df.sort_values(by='Period')
 
     fig2 = px.bar(
@@ -285,7 +284,7 @@ if not agg_kutir_df.empty:
         title=f"Kutir Type vs Period ({frequency})"
     )
     fig2.update_layout(margin=dict(l=20, r=20, t=40, b=20))
-    fig2.update_xaxes(type='category', tickangle=45)
+    fig2.update_xaxes(tickangle=45)
     st.plotly_chart(fig2, use_container_width=True)
 else:
     st.info("No data available to display Kutir Type vs Period Chart for the selected filters.")
