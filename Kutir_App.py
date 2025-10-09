@@ -168,7 +168,7 @@ with kpi1:
 with kpi2:
     st.markdown(f"""
         <div class='metric-card'>
-            <h3>Max Attendance in a {period_label[:-1] if period_label != 'Days' else 'Day'}</h3>
+            <h3>Max Avg Attendance by {period_label[:-1] if period_label != 'Days' else 'Day'}</h3>
             <h2>{int(max_students) if not pd.isna(max_students) else 0} | {max_period}</h2>
         </div>
     """, unsafe_allow_html=True)
@@ -176,7 +176,7 @@ with kpi2:
 with kpi3:
     st.markdown(f"""
         <div class='metric-card'>
-            <h3>{frequency} Avg Attendance</h3>
+            <h3>Daily Avg Attendance at {frequency} Level</h3>
             <h2>{avg_attendance:.2f}</h2>
         </div>
     """, unsafe_allow_html=True)
