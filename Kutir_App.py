@@ -273,6 +273,7 @@ if not agg_kutir_df.empty:
     
     # Sort the DataFrame by the clean date column
     agg_kutir_df = agg_kutir_df.sort_values(by='Period')
+    agg_kutir_df.dropna(subset=['Period'], inplace=True)
 
     fig2 = px.bar(
         agg_kutir_df,
