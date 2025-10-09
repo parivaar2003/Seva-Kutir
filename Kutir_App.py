@@ -176,7 +176,7 @@ with kpi2:
 with kpi3:
     st.markdown(f"""
         <div class='metric-card'>
-            <h3>Daily Avg Attendance at {frequency} Level</h3>
+            <h3>Avg Attendance per Day at {frequency} Level</h3>
             <h2>{avg_attendance:.2f}</h2>
         </div>
     """, unsafe_allow_html=True)
