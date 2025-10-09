@@ -232,7 +232,7 @@ if not agg_df.empty:
         line_color="green"
     )
 
-    fig1.update_layout(title=f"Student Attendance vs Period ({frequency})",
+    fig1.update_layout(title=f" Avg Student Attendance by Period ({frequency})",
                     margin=dict(l=20, r=20, t=40, b=20))
     fig1.update_xaxes(type='category', tickangle=45)
     st.plotly_chart(fig1, use_container_width=True)
@@ -294,7 +294,7 @@ if not agg_kutir_df.empty:
         color='Kutir',
         color_discrete_map=color_map_filtered,
         barmode='stack',
-        title=f"Kutir Type vs Period ({frequency})"
+        title=f"Total Attendance by Kutir Type by Period ({frequency})"
     )
     fig2.update_layout(margin=dict(l=20, r=20, t=40, b=20))
     fig2.update_xaxes(tickangle=45)
